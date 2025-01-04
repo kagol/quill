@@ -23,7 +23,7 @@
     "url": "https://github.com/slab/quill/issues"
   },
   "scripts": {
-    "dev": "pnpm -F demo dev",
+    "dev": "pnpm -F demo-js dev",
     "build": "run-p build:*",
     "build:quill": "npm run build -w quill",
     "build:website": "npm run build -w website",

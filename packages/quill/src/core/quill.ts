@@ -193,6 +193,8 @@ class Quill {
   options: ExpandedQuillOptions;
 
   constructor(container: HTMLElement | string, options: QuillOptions = {}) {
+    console.log('new Quill start====');
+
     this.options = expandConfig(container, options);
     this.container = this.options.container;
     if (this.container == null) {
