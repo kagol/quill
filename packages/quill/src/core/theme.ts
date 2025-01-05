@@ -28,6 +28,7 @@ class Theme {
   ) {}
 
   init() {
+    // 循环所有模块，并初始化
     Object.keys(this.options.modules).forEach((name) => {
       if (this.modules[name] == null) {
         this.addModule(name);
@@ -42,7 +43,9 @@ class Theme {
   addModule(name: string): unknown;
   addModule(name: string) {
     // @ts-expect-error
+    // 调用 Quill.import 导入模块
     const ModuleClass = this.quill.constructor.import(`modules/${name}`);
+    // 初始化模块
     this.modules[name] = new ModuleClass(
       this.quill,
       this.options.modules[name] || {},

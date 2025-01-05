@@ -195,6 +195,40 @@ class Quill {
   constructor(container: HTMLElement | string, options: QuillOptions = {}) {
     console.log('new Quill start====');
 
+    /**
+     * before: { theme: 'snow' }
+     * after:
+     * {
+     *   bounds: null,
+     *   container: div#editor,
+     *   modules: {
+     *    clipboard: { matchers: [] },
+     *    keyboard: { bindings: {...} },
+     *    history: { delay:1000, maxStack:100, userOnly:false },
+     *    uploader: {
+     *      handler: f,
+            mimetypes: ['image/png', 'image/jpeg']
+     *    },
+     *    toolbar: {
+     *      container : null,
+     *      handlers : { clean: ƒ, direction: ƒ, formula, image, indent: ƒ, link: ƒ, list: ƒ, video }
+     *    }
+     *   },
+     *   placeholder: "",
+     *   readOnly: false,
+     *   registry: {attributes: {…}, classes: {…}, tags: {…}, types: {…}},
+     *   theme: class extends { name: 'SnowTheme', DEFAULTS: {
+     *     modules: {
+     *       toolbar: {
+     *         handlers: {
+     *           formula, image, video, link
+     *         }
+     *       }
+     *     }
+     *   } }
+     * }
+     */
+    // 扩展 options 配置
     this.options = expandConfig(container, options);
     this.container = this.options.container;
     if (this.container == null) {
@@ -204,12 +238,16 @@ class Quill {
     if (this.options.debug) {
       Quill.debug(this.options.debug);
     }
+
     const html = this.container.innerHTML.trim();
     this.container.classList.add('ql-container');
     this.container.innerHTML = '';
     instances.set(this.container, this);
+    // 往 ql-container 容器中添加 ql-editor 元素
     this.root = this.addContainer('ql-editor');
     this.root.classList.add('ql-blank');
+
+    // 初始化 ScrollBlot
     this.emitter = new Emitter();
     const scrollBlotName = Parchment.ScrollBlot.blotName;
     const ScrollBlot = this.options.registry.query(scrollBlotName);
@@ -221,17 +259,24 @@ class Quill {
     this.scroll = new ScrollBlot(this.options.registry, this.root, {
       emitter: this.emitter,
     }) as Scroll;
+
     this.editor = new Editor(this.scroll);
     this.selection = new Selection(this.scroll, this.emitter);
     this.composition = new Composition(this.scroll, this.emitter);
+
+    // 初始化主题
     this.theme = new this.options.theme(this, this.options); // eslint-disable-line new-cap
+    // 增加内置模块，同时会初始化该模块
     this.keyboard = this.theme.addModule('keyboard');
     this.clipboard = this.theme.addModule('clipboard');
     this.history = this.theme.addModule('history');
     this.uploader = this.theme.addModule('uploader');
     this.theme.addModule('input');
     this.theme.addModule('uiNode');
+    // 增加外部模块，同时会初始化该模块，toolbar 模块也在这里初始化
     this.theme.init();
+
+    // 事件监听
     this.emitter.on(Emitter.events.EDITOR_CHANGE, (type) => {
       if (type === Emitter.events.TEXT_CHANGE) {
         this.root.classList.toggle('ql-blank', this.editor.isBlank());
@@ -264,6 +309,8 @@ class Quill {
         Quill.sources.USER,
       );
     });
+
+    // 设置初始内容
     if (html) {
       const contents = this.clipboard.convert({
         html: `${html}<p><br></p>`,
@@ -271,6 +318,7 @@ class Quill {
       });
       this.setContents(contents);
     }
+
     this.history.clear();
     if (this.options.placeholder) {
       this.root.setAttribute('data-placeholder', this.options.placeholder);
@@ -793,6 +841,8 @@ function expandConfig(
   containerOrSelector: HTMLElement | string,
   options: QuillOptions,
 ): ExpandedQuillOptions {
+  console.log('before expandConfig options====================', options);
+
   const container = resolveSelector(containerOrSelector);
   if (!container) {
     throw new Error('Invalid Quill container');
@@ -847,7 +897,7 @@ function expandConfig(
       : config.registry;
   }
 
-  return {
+  const resultConfig = {
     ...config,
     registry,
     container,
@@ -873,6 +923,10 @@ function expandConfig(
     ),
     bounds: resolveSelector(config.bounds),
   };
+
+  console.log('return expandConfig options====================', options);
+
+  return resultConfig;
 }
 
 // Handle selection preservation and TEXT_CHANGE emission
